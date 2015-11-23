@@ -127,6 +127,21 @@ class GFQuickbooksOnline {
 		 */
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-gf-quickbooks-online-addon.php';
 
+		/**
+		 * The class that authenticates with the Quickbooks API
+		 */
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-gf-quickbooks-online-qb-oauth.php';
+
+		/**
+		 * The class that authenticates with the Quickbooks API
+		 */
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-gf-quickbooks-online-qb-request.php';
+
+		/**
+		 * The class that manages Quickbooks Customer facilities
+		 */
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-gf-quickbooks-online-qb-customer.php';
+
 		$this->loader = new Loader();
 
 	}
@@ -145,7 +160,7 @@ class GFQuickbooksOnline {
 		$plugin_i18n = new i18n();
 		$plugin_i18n->setDomain($this->getPluginName());
 
-		$this->loader->addAction('plugins_loaded', $plugin_i18n, 'load_plugin_textdomain');
+		$this->loader->addAction('plugins_loaded', $plugin_i18n, 'loadPluginTextdomain');
 
 	}
 
@@ -158,15 +173,31 @@ class GFQuickbooksOnline {
 	 */
 	private function defineAdminHooks() {
 
-		$plugin_admin = new Admin\Admin($this->getPluginName(), $this->getVersion());
+		$gfAdmin = new Admin\Admin($this->getPluginName(), $this->getVersion());
 
-		$this->loader->addAction('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
-		$this->loader->addAction('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
+		$this->loader->addAction('admin_enqueue_scripts', $gfAdmin, 'enqueueStyles');
+		$this->loader->addAction('admin_enqueue_scripts', $gfAdmin, 'enqueueScripts');
 
-		$gfAddOn = GFQuickbooksOnlineAddOn::getInstance();
+		$gfAddOn = GFQuickbooksOnlineAddOn::get_instance();
 
 		$this->loader->addAction('gform_loaded', $gfAddOn, 'load', 5);
 
+		$qbOAuth = QBOAuth::get_instance();
+		$qbOAuth->setConsumerKey($gfAddOn->get_plugin_setting('qbconsumerkey'));
+		$qbOAuth->setConsumerSecret($gfAddOn->get_plugin_setting('qbconsumersecret'));
+
+		$this->loader->addAction('init', $qbOAuth, 'processOAuthRequest', 1);
+		$this->loader->addAction('admin_notices', $gfAddOn, 'displayErrors', 10);
+
+		$qbApi = QBRequest::get_instance();
+		$qbApi->setup($gfAddOn->get_plugin_setting('qbapistatus'), $gfAddOn->get_plugin_setting('qbrealmid'), $qbOAuth);
+		$qbApi->getCompanyInfo();
+
+		$qbCustomer = new QBCustomer($qbApi);
+		$this->loader->addFilter('gform_add_field_buttons', $qbCustomer, 'addQuickbooksCustomerField');
+		$this->loader->addFilter('gform_field_type_title', $qbCustomer, 'setFieldTitle');
+		$this->loader->addFilter('gform_field_input', $qbCustomer, 'setFieldInput', 10, 5);
+		$this->loader->addFilter('gform_editor_js', $qbCustomer, 'addEditorScript');
 	}
 
 	/**
@@ -178,14 +209,27 @@ class GFQuickbooksOnline {
 	 */
 	private function definePublicHooks() {
 
-		$plugin_public = new Pub\Pub($this->getPluginName(), $this->getVersion());
+		$gfPublic = new Pub\Pub($this->getPluginName(), $this->getVersion());
 
-		$this->loader->addAction('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
-		$this->loader->addAction('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
+		$this->loader->addAction('wp_enqueue_scripts', $gfPublic, 'enqueueStyles');
+		$this->loader->addAction('wp_enqueue_scripts', $gfPublic, 'enqueueScripts');
 
-		$gfAddOn = GFQuickbooksOnlineAddOn::getInstance();
+		$gfAddOn = GFQuickbooksOnlineAddOn::get_instance();
 
-		// $this->loader->addAction('gform_loaded', $gfAddOn, 'init', 5);
+		$this->loader->addAction('gform_loaded', $gfAddOn, 'init', 5);
+
+		$qbOAuth = QBOAuth::get_instance();
+		$qbOAuth->setConsumerKey($gfAddOn->get_plugin_setting('qbconsumerkey'));
+		$qbOAuth->setConsumerSecret($gfAddOn->get_plugin_setting('qbconsumersecret'));
+
+		$this->loader->addAction('init', $qbOAuth, 'processOAuthRequest', 1);
+
+		$qbApi = QBRequest::get_instance();
+		$qbApi->setup($gfAddOn->get_plugin_setting('qbapistatus'), $gfAddOn->get_plugin_setting('qbrealmid'), $qbOAuth);
+
+		$qbCustomer = new QBCustomer($qbApi);
+
+		$this->loader->addFilter('gform_enqueue_scripts', $qbCustomer, 'addAutoCompleteScript', 10, 2);
 
 	}
 

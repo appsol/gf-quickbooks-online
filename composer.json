@@ -1,0 +1,8 @@
+{
+    "require": {
+        "wheniwork/oauth1-intuit": "^0.1.1"
+    },
+    "autoload": {
+        "files": ["vendor/v3-php-sdk-2.2.0-RC/config.php"]
+    }
+}

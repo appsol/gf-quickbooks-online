@@ -11,7 +11,7 @@
  * @package    GFQuickbooksOnline
  * @subpackage GFQuickbooksOnline/public/partials
  */
-namespace AppSol\GFQuickbooksOnline\Public;
+namespace AppSol\GFQuickbooksOnline\Pub;
 
 ?>
 

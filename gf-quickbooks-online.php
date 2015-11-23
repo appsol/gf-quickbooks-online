@@ -30,6 +30,8 @@ if (! defined('WPINC')) {
     die;
 }
 
+require_once dirname(__FILE__) . '/vendor/autoload.php';
+
 define('GF_QUICKBOOKS_ONLINE_VERSION', '0.1.0');
 define('GF_QUICKBOOKS_ONLINE_PATH', __FILE__);
 

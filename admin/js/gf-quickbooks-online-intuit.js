@@ -28,8 +28,22 @@
 	 * Although scripts in the WordPress core, Plugins and Themes may be
 	 * practising this, we should strive to set a better example in our own work.
 	 */
-	 $(function()
+
+	 	var init = function init()
 	 	{
-	 		
-	 	});
+	 		if (intuit) {
+	 			setupIntuitIppAnywhere();
+	 		}
+	 	};
+
+		 var setupIntuitIppAnywhere = function setupIntuitIppAnywhere ()
+		 {
+		 	intuit.ipp.anywhere.setup({
+		        menuProxy: '',
+		        grantUrl: gf_quickbooks_online_intuit_strings.grantUrl
+		    });
+		 };
+
+		$(init);
+
 })(jQuery);
